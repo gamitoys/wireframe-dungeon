@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>WIREFRAME DUNGEON — Floor 2F</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: #000;
+      font-family: 'Courier New', monospace;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    #game-container {
+      position: relative;
+      width: 100%; height: 100%;
+      background: #000;
+    }
+    canvas#c {
+      display: block;
+      width: 100%; height: 100%;
+      image-rendering: pixelated;
+    }
+    #crt {
+      pointer-events: none;
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,0.6) 100%),
+        repeating-linear-gradient(
+          0deg,
+          rgba(0,0,0,0.13) 0px,
+          rgba(0,0,0,0.13) 1px,
+          transparent 1px,
+          transparent 3px
+        );
+      z-index: 10;
+    }
+    #hud {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      padding: 10px 14px 18px;
+      background: linear-gradient(transparent, rgba(0,20,0,0.88));
+      color: #00ff66;
+      font-size: 13px;
+      letter-spacing: 1px;
+      text-shadow: 0 0 6px #00ff66, 0 0 12px #00aa44;
+      z-index: 20;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 18px;
+      justify-content: space-between;
+      align-items: flex-end;
+      border-top: 1px solid #00ff6644;
+    }
+    #hud .group { display: flex; gap: 14px; flex-wrap: wrap; }
+    #hud span { white-space: nowrap; }
+    #message {
+      position: absolute;
+      top: 16%;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #00ff66;
+      font-size: 15px;
+      text-shadow: 0 0 8px #00ff66;
+      text-align: center;
+      z-index: 25;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      max-width: 90%;
+    }
+    #message.show { opacity: 1; }
+    #fx-flash {
+      pointer-events: none;
+      position: absolute;
+      inset: 0;
+      z-index: 12;
+      opacity: 0;
+      background: #00ff66;
+    }
+    #fx-get {
+      pointer-events: none;
+      position: absolute;
+      inset: 22px;
+      z-index: 13;
+      opacity: 0;
+      border: 2px solid #00ff66;
+      box-shadow:
+        0 0 18px #00ff66,
+        inset 0 0 24px rgba(0,255,102,0.18);
+    }
+    #fx-get .spark {
+      position: absolute;
+      width: 10px; height: 10px;
+      border: 2px solid #00ff66;
+      transform: rotate(45deg);
+    }
+    #fx-get .spark.tl { top: -6px; left: -6px; }
+    #fx-get .spark.tr { top: -6px; right: -6px; }
+    #fx-get .spark.bl { bottom: -6px; left: -6px; }
+    #fx-get .spark.br { bottom: -6px; right: -6px; }
+    #death-noise {
+      pointer-events: none;
+      position: absolute;
+      inset: 0;
+      z-index: 30;
+      width: 100%;
+      height: 100%;
+      display: none;
+      opacity: 0;
+      mix-blend-mode: screen;
+    }
+    #mobile-controls {
+      display: none;
+      position: absolute;
+      inset: 0;
+      z-index: 15;
+      pointer-events: none;
+    }
+    .btn {
+      position: absolute;
+      width: 58px; height: 58px;
+      border: 2px solid #00ff6688;
+      border-radius: 50%;
+      background: rgba(0,40,0,0.4);
+      color: #00ff66;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: auto;
+      text-shadow: 0 0 6px #00ff66;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #btn-action { bottom: 110px; right: 22px; }
+    #btn-turn-l { bottom: 180px; left: 18px; width: 50px; height: 50px; }
+    #btn-turn-r { bottom: 180px; left: 78px; width: 50px; height: 50px; }
+    #btn-forward { bottom: 240px; left: 48px; width: 50px; height: 50px; }
+    #btn-back { bottom: 120px; left: 48px; width: 50px; height: 50px; }
+    #ending-screen {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.82);
+      color: #00ff66;
+      z-index: 55;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      text-shadow: 0 0 10px #00ff66;
+      font-family: 'Courier New', monospace;
+    }
+    #ending-screen h2 {
+      font-size: clamp(20px, 6vw, 36px);
+      letter-spacing: 3px;
+      margin-bottom: 16px;
+    }
+    #ending-screen p { font-size: 13px; opacity: 0.85; margin: 6px 0; }
+    #ending-farewell {
+      margin-top: 18px !important;
+      font-size: 14px !important;
+      letter-spacing: 1px;
+      opacity: 1 !important;
+    }
+    #ending-record {
+      margin-top: 16px;
+      font-size: 12px;
+      letter-spacing: 1px;
+      line-height: 1.7;
+      opacity: 0.9;
+    }
+    #ending-log {
+      margin-top: 14px;
+      max-width: min(360px, 88vw);
+      max-height: 28vh;
+      overflow: auto;
+      text-align: left;
+      font-size: 11px;
+      line-height: 1.65;
+      opacity: 0.75;
+      border: 1px solid #00ff6644;
+      padding: 10px 12px;
+    }
+    #title-screen {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.12) 38%, rgba(0,0,0,0.72) 100%);
+      color: #00ff66;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding-top: 9vh;
+      padding-bottom: 4vh;
+      z-index: 50;
+      text-shadow: 0 0 10px #00ff66;
+      font-family: 'Courier New', monospace;
+      pointer-events: none;
+    }
+    #title-screen > * { pointer-events: auto; }
+    #title-screen h1 {
+      font-size: clamp(22px, 6vw, 42px);
+      letter-spacing: 4px;
+      margin-bottom: 12px;
+      text-align: center;
+      line-height: 1.2;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+      cursor: pointer;
+    }
+    #title-screen p {
+      font-size: 13px;
+      opacity: 0.8;
+      margin: 4px 0;
+      text-align: center;
+    }
+    #title-help {
+      margin-top: 16px;
+      font-size: 11px;
+      line-height: 1.7;
+      opacity: 0.9;
+      text-align: left;
+      letter-spacing: 0.5px;
+      border: 1px solid #00ff6644;
+      background: rgba(0,12,0,0.72);
+      padding: 10px 14px;
+      max-width: 320px;
+    }
+    #title-screen .start {
+      margin-top: 22px;
+      padding: 12px 28px;
+      border: 2px solid #00ff66;
+      background: rgba(0,20,0,0.75);
+      color: #00ff66;
+      font-family: inherit;
+      font-size: 16px;
+      letter-spacing: 2px;
+      cursor: pointer;
+      text-shadow: 0 0 8px #00ff66;
+      animation: blink 1.4s infinite;
+    }
+    body.titled #hud,
+    body.titled #minimap,
+    body.titled #hp-wrap,
+    body.titled #mobile-controls {
+      opacity: 0;
+      pointer-events: none;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    #continue-btn {
+      animation: contpulse 1.05s infinite !important;
+      box-shadow: 0 0 14px #00ff66cc, inset 0 0 10px #00ff6633;
+      border-width: 3px;
+      font-size: 17px;
+      margin-top: 18px;
+    }
+    #title-actions {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: max(14px, env(safe-area-inset-bottom));
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      z-index: 80;
+      pointer-events: auto;
+      padding: 0 16px 8px;
+    }
+    #title-actions .start {
+      margin-top: 0;
+      min-width: min(280px, 86vw);
+      min-height: 48px;
+      z-index: 80;
+      pointer-events: auto;
+      touch-action: manipulation;
+    }
+    #start-btn.has-save { animation: none; }
+    #title-confirm {
+      display: none;
+      position: absolute;
+      inset: 0;
+      z-index: 85;
+      background: rgba(0,8,0,0.86);
+      pointer-events: auto;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+    #title-confirm p {
+      font-size: 14px;
+      max-width: 280px;
+      line-height: 1.6;
+    }
+    #title-confirm button {
+      min-width: min(260px, 84vw);
+      min-height: 48px;
+    }
+    @media (max-width: 768px) {
+      #title-help {
+        max-height: 26vh;
+        overflow: auto;
+        font-size: 10px;
+        margin-top: 10px;
+      }
+      #title-screen {
+        padding-bottom: 150px;
+      }
+    }
+    @keyframes contpulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 10px #00ff66aa; }
+      50% { opacity: 0.35; box-shadow: 0 0 24px #00ff66; }
+    }
+    @keyframes hpblink {
+      0%, 49% { opacity: 1; }
+      50%, 100% { opacity: 0.4; }
+    }
+    #hp-wrap {
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 26;
+      width: min(560px, 54vw);
+      pointer-events: none;
+    }
+    #hp-wrap .row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 5px;
+    }
+    #hp-wrap .lab {
+      color: #00ff66;
+      font-size: 14px;
+      font-weight: bold;
+      letter-spacing: 2px;
+      text-shadow: 0 0 8px #00ff66;
+      width: 32px;
+      flex-shrink: 0;
+    }
+    #hp-wrap .bar {
+      flex: 1;
+      height: 20px;
+      border: 2px solid #00ff66;
+      background: #001400;
+      box-shadow: 0 0 12px #00ff6655, inset 0 0 10px #002200;
+      overflow: hidden;
+    }
+    #hp-wrap .fill {
+      height: 100%;
+      width: 87.5%;
+      background: repeating-linear-gradient(
+        90deg,
+        #00ff66 0 11px,
+        #006622 11px 13px
+      );
+      box-shadow: 0 0 12px #00ff66;
+      transition: width 0.18s linear;
+    }
+    #hp-wrap .fill.poison {
+      background: repeating-linear-gradient(
+        90deg,
+        #88ff44 0 11px,
+        #336600 11px 13px
+      );
+      animation: hpblink 0.5s steps(2) infinite;
+    }
+    #poison-tag {
+      display: none;
+      text-align: center;
+      color: #88ff44;
+      font-size: 12px;
+      letter-spacing: 3px;
+      text-shadow: 0 0 8px #88ff44;
+      margin-top: 2px;
+    }
+    #hp-wrap .num {
+      color: #00ff66;
+      font-size: 14px;
+      font-weight: bold;
+      text-shadow: 0 0 8px #00ff66;
+      min-width: 64px;
+      text-align: right;
+    }
+    #tgt-row { opacity: 0; transition: opacity 0.2s; }
+    #tgt-row.show { opacity: 1; }
+    #floor-badge {
+      display: block;
+      text-align: center;
+      color: #00ff66;
+      font-size: 22px;
+      font-weight: bold;
+      letter-spacing: 4px;
+      text-shadow: 0 0 10px #00ff66, 0 0 20px #00aa44;
+      margin-bottom: 6px;
+      line-height: 1.1;
+    }
+    #floor-badge small {
+      display: block;
+      font-size: 10px;
+      letter-spacing: 3px;
+      opacity: 0.8;
+      font-weight: normal;
+    }
+    #minimap {
+      position: absolute;
+      top: 12px; left: 12px;
+      width: 110px; height: 110px;
+      border: 1px solid #00ff6655;
+      background: rgba(0,15,0,0.75);
+      z-index: 20;
+      image-rendering: pixelated;
+    }
+    #retry-btn {
+      display: none;
+      position: absolute;
+      top: 42%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 40;
+      border: 2px solid #00ff66;
+      background: rgba(0,20,0,0.85);
+      color: #00ff66;
+      font-family: 'Courier New', monospace;
+      font-size: 16px;
+      letter-spacing: 2px;
+      padding: 12px 22px;
+      cursor: pointer;
+      text-shadow: 0 0 8px #00ff66;
+    }
+    #cfg-btn {
+      position: absolute;
+      top: 12px; right: 12px;
+      z-index: 62;
+      border: 1px solid #00ff6688;
+      background: rgba(0,20,0,0.9);
+      color: #00ff66;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      letter-spacing: 1px;
+      padding: 6px 10px;
+      cursor: pointer;
+      text-shadow: 0 0 6px #00ff66;
+      pointer-events: auto;
+      touch-action: manipulation;
+    }
+    #cfg-scrim {
+      display: none;
+      position: absolute;
+      inset: 0;
+      z-index: 70;
+      background: rgba(0,0,0,0.5);
+    }
+    #cfg-panel {
+      display: none;
+      position: absolute;
+      left: 50%;
+      top: 46%;
+      transform: translate(-50%, -50%);
+      z-index: 71;
+      width: min(280px, 90vw);
+      background: rgba(0,12,0,0.97);
+      border: 1px solid #00ff66;
+      box-shadow: 0 0 24px #00ff6655;
+      padding: 12px;
+      color: #00ff66;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      letter-spacing: 1px;
+      pointer-events: auto;
+    }
+    #cfg-panel h3 { letter-spacing: 3px; margin: 0 0 10px; font-size: 13px; text-align: center; }
+    #cfg-panel .row { display: flex; gap: 6px; margin-bottom: 8px; }
+    #cfg-panel button {
+      flex: 1;
+      border: 1px solid #00ff6688;
+      background: rgba(0,40,0,0.5);
+      color: #00ff66;
+      font-family: inherit;
+      font-size: 12px;
+      padding: 12px 6px;
+      min-height: 44px;
+      cursor: pointer;
+      text-shadow: 0 0 6px #00ff66;
+    }
+    #cfg-panel button.on { background: #00ff66; color: #001400; text-shadow: none; }
+    #cfg-panel .note { opacity: 0.55; font-size: 10px; text-align: center; margin-top: 6px; }
+    #dbg-btn {
+      display: none;
+      position: absolute;
+      top: 44px; right: 12px;
+      z-index: 60;
+      border: 1px solid #00ff6688;
+      background: rgba(0,20,0,0.9);
+      color: #00ff66;
+      font-family: 'Courier New', monospace;
+      font-size: 10px;
+      letter-spacing: 1px;
+      padding: 8px 10px;
+      cursor: pointer;
+      text-shadow: 0 0 6px #00ff66;
+      pointer-events: auto;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #dbg-btn.show { display: block; }
+    #debug-scrim {
+      display: none;
+      position: absolute;
+      inset: 0;
+      z-index: 59;
+      background: rgba(0,0,0,0.45);
+      pointer-events: auto;
+      touch-action: none;
+    }
+    #debug-panel {
+      display: none;
+      position: absolute;
+      left: 50%;
+      top: 46%;
+      transform: translate(-50%, -50%);
+      z-index: 61;
+      width: min(280px, 92vw);
+      max-height: 78vh;
+      overflow: auto;
+      background: rgba(0,12,0,0.97);
+      border: 1px solid #00ff66;
+      box-shadow: 0 0 24px #00ff6655;
+      padding: 10px;
+      color: #00ff66;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+      pointer-events: auto;
+      touch-action: manipulation;
+    }
+    #debug-panel h3 {
+      font-size: 11px;
+      letter-spacing: 2px;
+      margin: 0 0 6px;
+      opacity: 0.8;
+    }
+    #debug-panel .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-bottom: 6px;
+    }
+    #debug-panel button {
+      flex: 1 1 44%;
+      border: 1px solid #00ff6688;
+      background: rgba(0,40,0,0.5);
+      color: #00ff66;
+      font-family: inherit;
+      font-size: 11px;
+      padding: 10px 4px;
+      min-height: 42px;
+      cursor: pointer;
+      text-shadow: 0 0 6px #00ff66;
+      pointer-events: auto;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: rgba(0,255,102,0.25);
+    }
+    #debug-panel button.on {
+      background: #00ff66;
+      color: #001400;
+      text-shadow: none;
+    }
+    #debug-panel .note { opacity: 0.55; font-size: 10px; margin-top: 4px; }
+    @media (max-width: 768px) {
+      #mobile-controls { display: block; }
+      #hud { font-size: 11px; padding-bottom: 14px; }
+      #minimap {
+        width: 84px; height: 84px;
+        top: 92px;
+        left: 8px;
+      }
+      #cfg-btn { top: 8px; right: 8px; font-size: 10px; }
+      #dbg-btn { top: 40px; right: 8px; }
+      #hp-wrap {
+        top: 92px;
+        left: 100px;
+        transform: none;
+        width: calc(100vw - 110px);
+      }
+      #hp-wrap .bar { height: 16px; }
+      #floor-badge { font-size: 18px; margin-bottom: 3px; text-align: left; }
+      #message { top: 28%; }
+    }
+    #rotate-hint {
+      display: none;
+      position: absolute;
+      inset: 0;
+      z-index: 90;
+      background: #000;
+      color: #00ff66;
+      font-family: 'Courier New', monospace;
+      text-align: center;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      letter-spacing: 2px;
+      text-shadow: 0 0 10px #00ff66;
+      padding: 24px;
+    }
+    #rotate-hint span { font-size: 42px; margin-bottom: 16px; }
+    @media (orientation: landscape) and (pointer: coarse) and (max-height: 500px) {
+      #rotate-hint { display: flex; }
+    }
+  </style>
+</head>
+<body class="titled">
+  <div id="game-container">
+    <div id="crt"></div>
+    <div id="fx-flash"></div>
+    <div id="fx-get">
+      <span class="spark tl"></span>
+      <span class="spark tr"></span>
+      <span class="spark bl"></span>
+      <span class="spark br"></span>
+    </div>
+    <canvas id="death-noise"></canvas>
+    <canvas id="minimap" width="110" height="110"></canvas>
+    <div id="rotate-hint"><span>▯</span>TURN PHONE<br>縦持ちで遊んでください</div>
+    <button id="cfg-btn">CFG</button>
+    <button id="dbg-btn">DEBUG</button>
+    <div id="cfg-scrim"></div>
+    <div id="cfg-panel">
+      <h3>CONFIG</h3>
+      <div class="row">
+        <button id="cfg-bgm">BGM ON</button>
+        <button id="cfg-sfx">SFX ON</button>
+      </div>
+      <div class="row">
+        <button id="cfg-close">CLOSE</button>
+        <button id="cfg-title">TITLE</button>
+      </div>
+      <div class="note">PC: ESC　閉じてもセーブされます</div>
+    </div>
+    <div id="debug-scrim"></div>
+    <div id="debug-panel">
+      <h3>DEBUG</h3>
+      <div class="row">
+        <button data-dbg="god">GOD</button>
+        <button data-dbg="heal">HEAL</button>
+        <button data-dbg="gear">GEAR+</button>
+        <button data-dbg="unlock">UNLOCK STAIRS</button>
+      </div>
+      <h3>FLOOR</h3>
+      <div class="row">
+        <button data-dbg="floor" data-n="1">B1</button>
+        <button data-dbg="floor" data-n="5">B5 KING</button>
+        <button data-dbg="floor" data-n="10">B10 KING</button>
+        <button data-dbg="floor" data-n="15">B15 KING</button>
+        <button data-dbg="floor" data-n="20">B20 CORE</button>
+      </div>
+      <h3>SPAWN FRONT</h3>
+      <div class="row">
+        <button data-dbg="spawn" data-k="slime">SLIME</button>
+        <button data-dbg="spawn" data-k="small">SMALL</button>
+        <button data-dbg="spawn" data-k="splitter">SPLIT</button>
+        <button data-dbg="spawn" data-k="golem">TOXIC</button>
+        <button data-dbg="spawn" data-k="mimic">MIMIC</button>
+      </div>
+      <div class="row">
+        <button data-dbg="spawn" data-k="spider">SPIDER B5</button>
+        <button data-dbg="spawn" data-k="jelly">JELLY B10</button>
+        <button data-dbg="spawn" data-k="toxking">TOX JELLY B15</button>
+        <button data-dbg="spawn" data-k="core">CORE B20</button>
+      </div>
+      <div class="note">PC: ` キーでも開く</div>
+    </div>
+    <button id="retry-btn">[ RETRY ]</button>
+    <div id="hp-wrap">
+      <div id="floor-badge"><small>FLOOR</small>B1F</div>
+      <div class="row">
+        <span class="lab">HP</span>
+        <div class="bar"><div class="fill" id="hp-fill"></div></div>
+        <span class="num" id="hp-num">35/40</span>
+      </div>
+      <div id="poison-tag">POISON</div>
+      <div class="row" id="tgt-row">
+        <span class="lab">TGT</span>
+        <div class="bar"><div class="fill" id="tgt-fill"></div></div>
+        <span class="num" id="tgt-num"></span>
+      </div>
+    </div>
+    <div id="message"></div>
+    <div id="hud">
+      <div class="group">
+        <span>[ HP: <span id="hp">35</span>/40 ]</span>
+        <span>[ MP: <span id="mp">10</span>/10 ]</span>
+        <span>[ HERB: <span id="herb">0</span> ]</span>
+      </div>
+      <div class="group">
+        <span>[ L-HAND: <span id="lhand">DAGGER</span> ]</span>
+        <span>[ R-HAND: <span id="rhand">SHIELD</span> ]</span>
+      </div>
+      <div class="group">
+        <span>[ LVL: <span id="lvl">4</span> ]</span>
+        <span>[ FLOOR: <span id="floor">2F</span> ]</span>
+      </div>
+    </div>
+
+    <div id="mobile-controls">
+      <button class="btn" id="btn-forward">▲</button>
+      <button class="btn" id="btn-back">▼</button>
+      <button class="btn" id="btn-turn-l">◀</button>
+      <button class="btn" id="btn-turn-r">▶</button>
+      <button class="btn" id="btn-action">ATK</button>
+      <button class="btn" id="btn-herb" style="bottom:110px; right:90px;">HERB</button>
+      <button class="btn" id="btn-guard" style="bottom:175px; right:22px;">SHD</button>
+      <button class="btn" id="btn-bolt" style="bottom:175px; right:90px;">BOLT</button>
+    </div>
+
+    <div id="ending-screen">
+      <h2>SURFACE RESTORED</h2>
+      <p>The CORE was the heart of the grid.</p>
+      <p>Its pulse kept the floors folding downward.</p>
+      <p>You cut the signal. The maze unspools.</p>
+      <p>The wireframe dungeon goes dark.</p>
+      <p id="ending-farewell">The explorer's quest continues. See you again.</p>
+      <div id="ending-record"></div>
+      <div id="ending-log"></div>
+      <button class="start" id="ending-btn" style="margin-top:28px;animation:none">[ RETURN TO TITLE ]</button>
+    </div>
+    <div id="title-screen">
+      <h1>WIREFRAME<br>DUNGEON</h1>
+      <p>Gami Toys Works</p>
+      <p id="title-session">少し潜って、セーブして寝よう。</p>
+      <div id="title-help">
+        PC<br>
+        <b>W / ↑</b> 前　<b>S / ↓</b> 後<br>
+        <b>A / ←</b> 左旋回　<b>D / →</b> 右旋回<br>
+        <b>SPACE</b> 攻撃　<b>R / C</b> ボルト　<b>E / H</b> 薬草　<b>Q / F</b> 盾<br><br>
+        iPhone<br>
+        縦持ち　左：移動　右下：攻撃・ボルト・薬草・盾<br>
+        画面を閉じてもセーブされます<br>
+        CFG：右上
+      </div>
+      <div id="title-actions">
+        <button class="start" id="continue-btn" style="display:none;">[ CONTINUE ]</button>
+        <button class="start" id="start-btn">[ PRESS TO ENTER ]</button>
+      </div>
+      <div id="title-confirm">
+        <p>NEW GAME will overwrite the save and start at B1.</p>
+        <button class="start" id="ng-yes" style="animation:none">[ YES — B1 ]</button>
+        <button class="start" id="ng-no" style="animation:none;opacity:0.7">[ CANCEL ]</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="three.min.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
