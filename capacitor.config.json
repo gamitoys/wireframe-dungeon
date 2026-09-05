@@ -1,0 +1,11 @@
+{
+  "appId": "works.gamitoys.wireframedungeon",
+  "appName": "WIREFRAME DUNGEON",
+  "webDir": "www",
+  "backgroundColor": "#000000",
+  "ios": {
+    "contentInset": "automatic",
+    "preferredContentMode": "mobile",
+    "scheme": "Wireframe Dungeon"
+  }
+}

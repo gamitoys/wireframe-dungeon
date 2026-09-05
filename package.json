@@ -1,0 +1,19 @@
+{
+  "name": "wireframe-dungeon",
+  "version": "1.0.0",
+  "private": true,
+  "description": "WIREFRAME DUNGEON — Gami Toys Works",
+  "scripts": {
+    "ios:add": "npx cap add ios",
+    "sync": "npx cap sync ios",
+    "open": "npx cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/core": "^7.4.3",
+    "three": "0.132.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.4.3",
+    "@capacitor/ios": "^7.4.3"
+  }
+}
