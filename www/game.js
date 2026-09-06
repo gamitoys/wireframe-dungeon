@@ -361,6 +361,7 @@ function setupConfig() {
       fn(e);
     }
     el.addEventListener('pointerup', run);
+    el.addEventListener('touchend', run, { passive: false });
     el.addEventListener('click', run);
   }
   bindTap(document.getElementById('cfg-btn'), toggleConfig);
@@ -448,6 +449,7 @@ function setupDebug() {
       fn(e);
     }
     el.addEventListener('pointerup', run);
+    el.addEventListener('touchend', run, { passive: false });
     el.addEventListener('click', run);
   }
   bindTap(btn, toggleDebug);
@@ -858,6 +860,7 @@ function init() {
       fn(e);
     }
     el.addEventListener('pointerup', run);
+    el.addEventListener('touchend', run, { passive: false });
     el.addEventListener('click', run);
   }
   bindTap(document.getElementById('start-btn'), startGame);
