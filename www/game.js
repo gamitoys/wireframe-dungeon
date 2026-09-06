@@ -65,7 +65,7 @@ const N = {
 
 function audioInit() {
   if (SFX.ctx) {
-    if (SFX.ctx.state === 'suspended') SFX.ctx.resume();
+    if (SFX.ctx.state !== 'running') SFX.ctx.resume().catch(function() {});
     return;
   }
   const Ctx = window.AudioContext || window.webkitAudioContext;
@@ -80,6 +80,23 @@ function audioInit() {
   SFX.sfx.gain.value = 0.9;
   SFX.sfx.connect(SFX.master);
   applyAudioGains();
+}
+
+function unlockAudio() {
+  audioInit();
+  if (!SFX.ctx) return Promise.resolve();
+  const p = SFX.ctx.state === 'running' ? Promise.resolve() : SFX.ctx.resume();
+  try {
+    const t = SFX.ctx.currentTime;
+    const o = SFX.ctx.createOscillator();
+    const g = SFX.ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    o.connect(g);
+    g.connect(SFX.master);
+    o.start(t);
+    o.stop(t + 0.02);
+  } catch (err) {}
+  return p.catch(function() {});
 }
 
 function beep(freq, type, dur, vol, dest, slide) {
@@ -292,17 +309,28 @@ function musicTick() {
 }
 
 function startMusic() {
-  audioInit();
-  if (SFX.ctx && SFX.ctx.state === 'suspended') {
-    SFX.ctx.resume().catch(function() {});
-  }
+  unlockAudio();
   applyAudioGains();
-  if (SFX.timer) return;
   SFX.started = true;
+  if (SFX.timer) return;
   SFX.step = SFX.step || 0;
   const interval = (60 / 92) * 500;
   SFX.timer = setInterval(musicTick, interval);
   musicTick();
+}
+
+function wakeAudio() {
+  unlockAudio().then(function() {
+    applyAudioGains();
+    if (!SFX.started) return;
+    if (SFX.timer) {
+      clearInterval(SFX.timer);
+      SFX.timer = null;
+    }
+    const interval = (60 / 92) * 500;
+    SFX.timer = setInterval(musicTick, interval);
+    musicTick();
+  });
 }
 
 function loadCfg() {
@@ -878,7 +906,8 @@ function init() {
   setupSleepHooks();
   labelContinue();
   lockPortrait();
-  window.addEventListener('pointerdown', function() { startMusic(); }, { capture: true });
+  window.addEventListener('pointerdown', function() { wakeAudio(); startMusic(); }, { capture: true });
+  window.addEventListener('touchstart', function() { wakeAudio(); startMusic(); }, { capture: true, passive: true });
 
   animate();
 }
@@ -920,10 +949,6 @@ function labelContinue() {
 }
 
 function setupSleepHooks() {
-  function wakeAudio() {
-    startMusic();
-    applyAudioGains();
-  }
   document.addEventListener('visibilitychange', function() {
     if (document.hidden) {
       if (inPlay() && !dead) {
@@ -934,11 +959,24 @@ function setupSleepHooks() {
       wakeAudio();
     }
   });
+  document.addEventListener('webkitvisibilitychange', function() {
+    if (!document.hidden && !document.webkitHidden) wakeAudio();
+  });
   window.addEventListener('pagehide', function() {
     if (inPlay() && !dead) writeSave();
   });
   window.addEventListener('pageshow', wakeAudio);
   window.addEventListener('focus', wakeAudio);
+  document.addEventListener('resume', wakeAudio);
+  window.addEventListener('resume', wakeAudio);
+  try {
+    const Cap = window.Capacitor;
+    if (Cap && Cap.Plugins && Cap.Plugins.App) {
+      Cap.Plugins.App.addListener('appStateChange', function(state) {
+        if (state && state.isActive) wakeAudio();
+      });
+    }
+  } catch (err) {}
 }
 
 function hideNewGameConfirm() {
