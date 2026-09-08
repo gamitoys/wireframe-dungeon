@@ -452,7 +452,7 @@
     }
     #cfg-btn {
       position: absolute;
-      top: calc(env(safe-area-inset-top, 0px) + 10px);
+      top: max(72px, calc(env(safe-area-inset-top, 0px) + 18px));
       right: calc(env(safe-area-inset-right, 0px) + 10px);
       z-index: 80;
       border: 1px solid #00ff6688;
@@ -601,24 +601,24 @@
       #hud { font-size: 11px; padding-bottom: 14px; }
       #minimap {
         width: 84px; height: 84px;
-        top: 92px;
+        top: 108px;
         left: 8px;
       }
       #cfg-btn {
-        top: max(54px, calc(env(safe-area-inset-top, 0px) + 8px));
+        top: 108px;
         right: 10px;
         font-size: 11px;
         padding: 12px 14px;
       }
       #dbg-btn {
-        top: max(106px, calc(env(safe-area-inset-top, 0px) + 60px));
+        top: 160px;
         right: 10px;
       }
       #hp-wrap {
-        top: 92px;
+        top: 108px;
         left: 100px;
         transform: none;
-        width: calc(100vw - 110px);
+        width: calc(100vw - 176px);
       }
       #hp-wrap .bar { height: 16px; }
       #floor-badge { font-size: 18px; margin-bottom: 3px; text-align: left; }
