@@ -225,15 +225,16 @@
     }
     #title-help {
       margin-top: 16px;
-      font-size: 11px;
-      line-height: 1.7;
-      opacity: 0.9;
+      font-size: 16px;
+      line-height: 1.85;
+      opacity: 0.95;
       text-align: left;
       letter-spacing: 0.5px;
       border: 1px solid #00ff6644;
       background: rgba(0,12,0,0.72);
-      padding: 10px 14px;
-      max-width: 320px;
+      padding: 14px 16px;
+      max-width: 360px;
+      width: min(360px, 86vw);
       scrollbar-width: none;
       -ms-overflow-style: none;
     }
@@ -316,10 +317,11 @@
     }
     @media (max-width: 768px) {
       #title-help {
-        max-height: 32vh;
-        overflow: auto;
-        font-size: 10px;
-        margin-top: 10px;
+        max-height: none;
+        overflow: visible;
+        font-size: 16px;
+        margin-top: 12px;
+        padding: 16px 16px;
         scrollbar-width: none;
         -ms-overflow-style: none;
       }
@@ -766,14 +768,11 @@
       <p>Gami Toys Works</p>
       <p id="title-session">少し潜って、セーブして寝よう。</p>
       <div id="title-help">
-        PC<br>
-        <b>W / ↑</b> 前　<b>S / ↓</b> 後<br>
-        <b>A / ←</b> 左旋回　<b>D / →</b> 右旋回<br>
-        <b>SPACE</b> 攻撃　<b>R / C</b> ボルト　<b>E / H</b> 薬草　<b>Q / F</b> 盾<br><br>
-        iPhone<br>
-        縦持ち　左：移動　右下：攻撃・ボルト・薬草・盾<br>
-        画面を閉じてもセーブされます<br>
-        CFG：右上
+        縦持ち<br>
+        左：移動<br>
+        右下：攻撃・ボルト・薬草・盾<br>
+        閉じてもセーブされます<br>
+        CFG：右
       </div>
       <div id="title-actions">
         <button class="start" id="continue-btn" style="display:none;">[ CONTINUE ]</button>
